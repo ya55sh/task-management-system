@@ -1,5 +1,5 @@
-import { Users } from "./users";
-import { UserTeams } from "./user_teams";
+import { User } from "./user";
+import { UserTeam } from "./user_team";
 import {
 	Entity,
 	Column,
@@ -12,16 +12,16 @@ import {
 } from "typeorm";
 
 @Entity()
-export class Teams {
+export class Team {
 	@PrimaryGeneratedColumn()
 	id!: number;
 
 	@Column({ nullable: false })
 	name!: string;
 
-	@ManyToOne(() => Users, (user) => user.managed_teams, { nullable: false })
+	@ManyToOne(() => User, (user) => user.managed_teams, { nullable: false, onDelete: "CASCADE" })
 	@JoinColumn({ name: "managed_by" })
-	managed_by!: Users;
+	managed_by!: User;
 
 	@CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
 	created_at!: Date;
@@ -29,6 +29,6 @@ export class Teams {
 	@UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
 	updated_at!: Date;
 
-	@OneToMany(() => UserTeams, (userteams) => userteams.team)
-	user_teams!: UserTeams[];
+	@OneToMany(() => UserTeam, (userteam) => userteam.team)
+	user_teams!: UserTeam[];
 }

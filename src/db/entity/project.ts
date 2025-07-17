@@ -1,5 +1,5 @@
-import { Users } from "./users";
-import { Tasks } from "./tasks";
+import { User } from "./user";
+import { Task } from "./task";
 import {
 	Entity,
 	Column,
@@ -12,16 +12,16 @@ import {
 } from "typeorm";
 
 @Entity()
-export class Projects {
+export class Project {
 	@PrimaryGeneratedColumn()
 	id!: number;
 
 	@Column({ nullable: false })
 	title!: string;
 
-	@ManyToOne(() => Users, (user) => user.created_projects, { nullable: false })
+	@ManyToOne(() => User, (user) => user.created_projects, { nullable: false, onDelete: "CASCADE" })
 	@JoinColumn({ name: "created_by" })
-	created_by!: Users;
+	created_by!: User;
 
 	@CreateDateColumn()
 	created_at!: Date;
@@ -29,6 +29,6 @@ export class Projects {
 	@UpdateDateColumn()
 	updated_at!: Date;
 
-	@OneToMany(() => Tasks, (task) => task.project)
-	tasks!: Tasks[];
+	@OneToMany(() => Task, (task) => task.project)
+	tasks!: Task[];
 }

@@ -1,5 +1,5 @@
-import { Tasks } from "./tasks";
-import { Users } from "./users";
+import { Task } from "./task";
+import { User } from "./user";
 
 export enum TaskLogAction {
 	STATUS = "status",
@@ -10,13 +10,13 @@ export enum TaskLogAction {
 
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn } from "typeorm";
 
-@Entity("task_logs")
-export class TaskLogs {
+@Entity("task_log")
+export class TaskLog {
 	@PrimaryGeneratedColumn()
 	id!: number;
 
-	@ManyToOne(() => Tasks, (task) => task.logs, { nullable: false })
-	task!: Tasks;
+	@ManyToOne(() => Task, (task) => task.logs, { nullable: false, onDelete: "CASCADE" })
+	task!: Task;
 
 	@Column({ type: "enum", enum: TaskLogAction, nullable: false })
 	action!: TaskLogAction;
@@ -27,9 +27,9 @@ export class TaskLogs {
 	@Column()
 	new_value!: string;
 
-	@ManyToOne(() => Users, (user) => user.task_logs, { nullable: false })
+	@ManyToOne(() => User, (user) => user.task_logs, { nullable: false, onDelete: "CASCADE" })
 	@JoinColumn({ name: "created_by" })
-	created_by!: Users;
+	created_by!: User;
 
 	@CreateDateColumn()
 	created_at!: Date;

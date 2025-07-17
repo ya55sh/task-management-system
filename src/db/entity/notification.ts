@@ -1,5 +1,5 @@
-import { Tasks } from "./tasks";
-import { Users } from "./users";
+import { Task } from "./task";
+import { User } from "./user";
 //('assignment','mention','comment','status_change');
 enum NotificationType {
 	ASSIGNMENT = "assignment",
@@ -11,21 +11,21 @@ enum NotificationType {
 import { Entity, Column, JoinColumn, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn } from "typeorm";
 
 @Entity()
-export class Notifications {
+export class Notification {
 	@PrimaryGeneratedColumn()
 	id!: number;
 
-	@ManyToOne(() => Tasks, (task) => task.notifications, { nullable: false })
+	@ManyToOne(() => Task, (task) => task.notifications, { nullable: false, onDelete: "CASCADE" })
 	@JoinColumn({ name: "task_id" })
-	task!: Tasks;
+	task!: Task;
 
-	@ManyToOne(() => Users, (user) => user.from_notifications, { nullable: false })
+	@ManyToOne(() => User, (user) => user.from_notifications, { nullable: false, onDelete: "CASCADE" })
 	@JoinColumn({ name: "user_id" })
-	from_user!: Users;
+	from_user!: User;
 
-	@ManyToOne(() => Users, (user) => user.to_notifications, { nullable: false })
+	@ManyToOne(() => User, (user) => user.to_notifications, { nullable: false, onDelete: "CASCADE" })
 	@JoinColumn({ name: "to_user_id" })
-	to_user!: Users;
+	to_user!: User;
 
 	@Column({ type: "enum", enum: NotificationType, nullable: false })
 	notification_type!: NotificationType;

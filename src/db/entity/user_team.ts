@@ -1,19 +1,19 @@
-import { Users } from "./users";
-import { Teams } from "./teams";
+import { User } from "./user";
+import { Team } from "./team";
 import { PrimaryGeneratedColumn, Entity, CreateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 
-@Entity("user_teams")
-export class UserTeams {
+@Entity("user_team")
+export class UserTeam {
 	@PrimaryGeneratedColumn()
 	id!: number;
 
-	@ManyToOne(() => Teams, (team) => team.user_teams)
+	@ManyToOne(() => Team, (team) => team.user_teams, { onDelete: "CASCADE" })
 	@JoinColumn({ name: "team_id" })
-	team!: Teams;
+	team!: Team;
 
-	@ManyToOne(() => Users, (user) => user.user_teams, { nullable: false })
+	@ManyToOne(() => User, (user) => user.user_teams, { nullable: false, onDelete: "CASCADE" })
 	@JoinColumn({ name: "member_id" })
-	member!: Users;
+	member!: User;
 
 	@CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
 	joined_at!: Date;
