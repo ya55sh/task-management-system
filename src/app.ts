@@ -1,6 +1,6 @@
 import "dotenv/config";
 import "reflect-metadata";
-import express from "express";
+import express, { Request, Response } from "express";
 import { AppDataSource } from "./db/model";
 import cors from "cors";
 import { indexRouter } from "./routes/index.route";
@@ -14,10 +14,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/v1", indexRouter);
 
-app.get("/", (req, res) => {
-	res.send("Hello, World!");
-});
-
 async function startServer() {
 	try {
 		await AppDataSource.initialize();
@@ -30,3 +26,4 @@ async function startServer() {
 		process.exit(1); // Exit the process if DB fails to initialize
 	}
 }
+startServer();

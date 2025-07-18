@@ -5,26 +5,34 @@ import { UserToken } from "../db/entity/user_token";
 import { UserEmailToken } from "../db/entity/user_email_token";
 import { AppDataSource } from "../db/model";
 
-import { hashPassword, comparePassword } from "../utils/utils.password";
-import { jwtSign, jwtVerify } from "../utils/utils.token";
-import { sendResetPasswordEmail } from "../utils/utils.mail";
+import { hashPassword, comparePassword } from "../utils/password.utils";
+import { jwtSign } from "../utils/token.utils";
+import { sendResetPasswordEmail } from "../utils/mail.utils";
 
 const registerUser = async (req: Request, res: Response) => {
 	try {
+		let userRepository = AppDataSource.getRepository(User);
 		const { firstName, lastName, email, password } = req.body;
 
 		if (!firstName || !lastName || !email || !password) {
 			return res.status(400).json({ message: "First name, last name, email and password are required" });
 		}
 
-		let user = { firstName, lastName, email, password };
+		let user = await userRepository.findOne({ where: { email } });
+		if (user) {
+			return res.status(400).json({ message: "User already exists" });
+		}
 
-		const hash = hashPassword(password);
+		user = { firstName, lastName, email, password, role: "user" } as User;
 
-		const userRepository = AppDataSource.getRepository(User);
+		const hash = await hashPassword(password);
+
+		userRepository = AppDataSource.getRepository(User);
 		user = await userRepository.save({ firstName, lastName, email, password: hash });
 
-		res.status(201).json({ message: "User registered successfully", user });
+		const { password: _, ...userWithoutPassword } = user;
+
+		res.status(201).json({ message: "User registered successfully", user: userWithoutPassword });
 	} catch (error: any) {
 		console.error(error);
 		res.status(500).json({ message: "Error occurred while registering user" });
@@ -57,10 +65,11 @@ const loginUser = async (req: Request, res: Response) => {
 			process.env.JWT_SESSION_TIME || "1h"
 		);
 
+		// save the token in the user_token table in the database
 		const userTokenRepository = AppDataSource.getRepository(UserToken);
 		await userTokenRepository.save({ token, user: user });
 
-		res.status(200).json({ message: "User logged in successfully", user, token });
+		res.status(200).json({ message: "User logged in successfully", token });
 	} catch (error: any) {
 		console.error(error);
 		res.status(500).json({ message: "Error occurred while logging in" });
@@ -104,11 +113,7 @@ const getUser = async (req: Request, res: Response) => {
 				return res.status(401).json({ message: "Unauthorized" });
 			}
 
-			const decoded = jwtVerify(token);
-
-			if (!decoded) {
-				return res.status(401).json({ message: "Unauthorized" });
-			}
+			// Token has already been verified in middleware, so no need to call jwtVerify here
 			const userTokenRepository = AppDataSource.getRepository(UserToken);
 			const userToken = await userTokenRepository.findOne({
 				where: { token },
@@ -132,7 +137,7 @@ const getUser = async (req: Request, res: Response) => {
 const updateUser = async (req: Request, res: Response) => {
 	try {
 		const userId = req.params.id || req.query.id;
-		const { firstName, lastName, email, password } = req.body;
+		const updates = req.body; // Only fields to update
 
 		if (!userId) {
 			return res.status(400).json({ message: "User ID is required" });
@@ -145,7 +150,10 @@ const updateUser = async (req: Request, res: Response) => {
 			return res.status(404).json({ message: "User not found" });
 		}
 
-		const updatedUser = await userRepository.save({ ...user, firstName, lastName, email, password });
+		// Only update provided fields
+		Object.assign(user, updates);
+
+		const updatedUser = await userRepository.save(user);
 
 		res.status(200).json({ message: "User updated successfully", user: updatedUser });
 	} catch (error: any) {
@@ -237,16 +245,9 @@ const resetPassword = async (req: Request, res: Response) => {
 			return res.status(400).json({ message: "Invalid or expired token" });
 		}
 
-		// Optionally: verify JWT expiration if using JWT
-		try {
-			jwtVerify(token);
-		} catch {
-			return res.status(400).json({ message: "Token expired" });
-		}
-
 		const userRepository = AppDataSource.getRepository(User);
 		const user = tokenEntry.user;
-		user.password = hashPassword(newPassword);
+		user.password = await hashPassword(newPassword);
 		await userRepository.save(user);
 
 		// Invalidate the token

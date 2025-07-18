@@ -2,7 +2,7 @@ import { Collaboration } from "./collaboration";
 import { User } from "./user";
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from "typeorm";
 
-@Entity({ name: "collaboration_attachments" })
+@Entity({ name: "collaboration_attachment" })
 export class CollaborationAttachment {
 	@PrimaryGeneratedColumn()
 	id!: number;

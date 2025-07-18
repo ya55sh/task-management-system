@@ -1,19 +1,30 @@
 import { Router } from "express";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import {
+	userLoginValidationMiddleware,
+	userRegisterValidationMiddleware,
+} from "../middlewares/user_validation.middlware";
+import {
+	getUser,
+	registerUser,
+	loginUser,
+	logoutUser,
+	updateUser,
+	deleteUser,
+	forgotPassword,
+	resetPassword,
+} from "../controllers/user.controller";
 
 const userRouter = Router();
 
-userRouter.get("/:id", (getUser) => {});
-userRouter.post("/register", (registerUser) => {});
-userRouter.post("/login", (loginUser) => {});
-userRouter.post("/logout", (logoutUser) => {});
-userRouter.put("/:id", (updateUser) => {});
-userRouter.delete("/:id", (deleteUser) => {});
+userRouter.get("/:id", authMiddleware, getUser);
+userRouter.post("/register", userRegisterValidationMiddleware, registerUser);
+userRouter.post("/login", userLoginValidationMiddleware, loginUser);
+userRouter.post("/logout", authMiddleware, logoutUser);
+userRouter.put("/:id", authMiddleware, updateUser);
+userRouter.delete("/:id", authMiddleware, deleteUser);
 
-userRouter.post("/forgot-password", (forgotPassword) => {});
-userRouter.post("/reset-password", (resetPassword) => {});
-userRouter.post("/verify-email", (verifyEmail) => {});
-userRouter.post("/resend-verification-email", (resendVerificationEmail) => {});
-userRouter.post("/send-verification-email", (sendVerificationEmail) => {});
-userRouter.post("/send-reset-password-email", (sendResetPasswordEmail) => {});
+userRouter.post("/forgot-password", authMiddleware, forgotPassword);
+userRouter.post("/reset-password", authMiddleware, resetPassword);
 
 export { userRouter };
