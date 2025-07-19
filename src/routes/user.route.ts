@@ -13,11 +13,13 @@ import {
 	deleteUser,
 	forgotPassword,
 	resetPassword,
+	getUsers,
 } from "../controllers/user.controller";
 
 const userRouter = Router();
 
 userRouter.get("/:id", authMiddleware, getUser);
+userRouter.get("/", authMiddleware, getUsers);
 userRouter.post("/register", userRegisterValidationMiddleware, registerUser);
 userRouter.post("/login", userLoginValidationMiddleware, loginUser);
 userRouter.post("/logout", authMiddleware, logoutUser);

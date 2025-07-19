@@ -39,16 +39,16 @@ export class Task {
 	@Column({ nullable: false })
 	description!: string;
 
-	@Column({ type: "enum", enum: TaskStatus, default: TaskStatus.BACKLOG })
+	@Column({ type: "enum", enum: TaskStatus, default: TaskStatus.STARTED })
 	status!: TaskStatus;
-
-	@ManyToOne(() => User, (user) => user.assigned_task, { nullable: false, onDelete: "CASCADE" })
-	@JoinColumn({ name: "assigned_to" })
-	assigned_to!: User;
 
 	@ManyToOne(() => User, (user) => user.created_task, { nullable: false, onDelete: "CASCADE" })
 	@JoinColumn({ name: "created_by" })
 	created_by!: User;
+
+	@ManyToOne(() => User, (user) => user.assigned_task, { nullable: false, onDelete: "CASCADE" })
+	@JoinColumn({ name: "assigned_to" })
+	assigned_to!: User;
 
 	@ManyToOne(() => User, (user) => user.updated_task, { onDelete: "CASCADE" })
 	@JoinColumn({ name: "updated_by" })
