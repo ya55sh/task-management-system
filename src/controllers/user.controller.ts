@@ -1,13 +1,13 @@
 import "dotenv/config";
 import { Request, Response } from "express";
-import { User } from "../db/entity/user";
+import { User, UserRole } from "../db/entity/user";
 import { UserToken } from "../db/entity/user_token";
 import { UserEmailToken } from "../db/entity/user_email_token";
 import { AppDataSource } from "../db/model";
 
 import { hashPassword, comparePassword } from "../utils/password.utils";
 import { jwtSign } from "../utils/token.utils";
-import { sendResetPasswordEmail } from "../utils/mail.utils";
+import { sendResetPasswordEmail } from "../services/mail.service";
 
 const registerUser = async (req: Request, res: Response) => {
 	try {
@@ -23,12 +23,16 @@ const registerUser = async (req: Request, res: Response) => {
 			return res.status(400).json({ message: "User already exists" });
 		}
 
-		user = { firstName, lastName, email, password, role: "user" } as User;
-
 		const hash = await hashPassword(password);
 
 		userRepository = AppDataSource.getRepository(User);
-		user = await userRepository.save({ firstName, lastName, email, password: hash });
+		user = await userRepository.save({
+			firstName,
+			lastName,
+			email,
+			password: hash,
+			role: UserRole.USER,
+		});
 
 		const { password: _, ...userWithoutPassword } = user;
 
@@ -131,6 +135,17 @@ const getUser = async (req: Request, res: Response) => {
 	} catch (error: any) {
 		console.error(error);
 		res.status(500).json({ message: "Error occurred while fetching user" });
+	}
+};
+
+const getUsers = async (req: Request, res: Response) => {
+	try {
+		const userRepository = AppDataSource.getRepository(User);
+		const users = await userRepository.find();
+		res.status(200).json({ message: "Users fetched successfully", users });
+	} catch (error: any) {
+		console.error(error);
+		res.status(500).json({ message: "Error occurred while fetching users" });
 	}
 };
 
@@ -260,4 +275,14 @@ const resetPassword = async (req: Request, res: Response) => {
 	}
 };
 
-export { registerUser, loginUser, logoutUser, getUser, updateUser, deleteUser, forgotPassword, resetPassword };
+export {
+	registerUser,
+	loginUser,
+	logoutUser,
+	getUser,
+	getUsers,
+	updateUser,
+	deleteUser,
+	forgotPassword,
+	resetPassword,
+};

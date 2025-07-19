@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { Request } from "express";
 
 function registerSchema() {
 	return z.object({
