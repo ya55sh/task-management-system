@@ -5,8 +5,8 @@ import { UserToken } from "../db/entity/user_token";
 import { UserEmailToken } from "../db/entity/user_email_token";
 import { AppDataSource } from "../db/model";
 
-import { hashPassword, comparePassword } from "../utils/password.utils";
-import { jwtSign } from "../utils/token.utils";
+import { hashPassword, comparePassword } from "../utils/password.util";
+import { jwtSign } from "../utils/token.util";
 import { sendResetPasswordEmail } from "../services/mail.service";
 
 const registerUser = async (req: Request, res: Response) => {

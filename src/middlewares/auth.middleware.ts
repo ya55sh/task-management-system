@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 
 import { AppDataSource } from "../db/model";
 import { UserToken } from "../db/entity/user_token";
-import { jwtVerify } from "../utils/token.utils";
+import { jwtVerify } from "../utils/token.util";
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
 	const treq = req as any;

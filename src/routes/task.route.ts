@@ -9,8 +9,8 @@ taskRouter.use(authMiddleware);
 
 // Task routes using authenticated user context
 taskRouter.get("/", getTasks); // Get current user's tasks
-taskRouter.post("/", createTask); // Create task for current user
 taskRouter.get("/:id", getTask); // Get specific task (if user has access)
+taskRouter.post("/", createTask); // Create task for current user
 taskRouter.put("/:id", updateTask); // Update task (if user has access)
 taskRouter.delete("/:id", deleteTask); // Delete task (if user is creator)
 

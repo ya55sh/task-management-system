@@ -19,7 +19,7 @@ const sendEmail = async (email: string, subject: string, html: string) => {
 	await transporter.sendMail(mailOptions);
 };
 
-export async function sendResetPasswordEmail(email: string, firstName: string, resetLink: string) {
+async function sendResetPasswordEmail(email: string, firstName: string, resetLink: string) {
 	const subject = "Password Reset Request";
 	const html = `<p>Hi ${firstName},</p>
            <p>You requested a password reset. Click the link below to reset your password:</p>
@@ -27,3 +27,9 @@ export async function sendResetPasswordEmail(email: string, firstName: string, r
            <p>If you did not request this, you can ignore this email.</p>`;
 	await sendEmail(email, subject, html);
 }
+
+const sendEmailFromQueue = async (message: any) => {
+	await sendEmail(message.email, message.subject, message.body);
+};
+
+export { transporter, sendEmail, sendResetPasswordEmail, sendEmailFromQueue };

@@ -10,9 +10,9 @@ import {
 
 const projectRouter = Router();
 
-projectRouter.post("/create", authMiddleware, createProject);
 projectRouter.get("/:id", authMiddleware, getProject);
 projectRouter.get("/", authMiddleware, getProjects);
+projectRouter.post("/create", authMiddleware, createProject);
 projectRouter.put("/:id", authMiddleware, updateProject);
 projectRouter.delete("/:id", authMiddleware, deleteProject);
 

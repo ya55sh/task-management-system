@@ -1,48 +1,56 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../db/model";
 import { Task, TaskStatus } from "../db/entity/task";
-import { Project } from "../db/entity/project";
 import { User } from "../db/entity/user";
+import { assignTaskNotification, updateTaskNotification } from "../services/notification.service";
+import { sendMessage } from "../rabbitMq/sender";
 
 const createTask = async (req: Request, res: Response) => {
 	try {
-		const { title, description, status, projectId, assignedToId } = req.body;
+		const { title, description, dueDate, status, projectId, assignedToId } = req.body;
 		const userId = req.user.id; // From authenticated user
 
 		if (!title || !description || !projectId) {
 			return res.status(400).json({ message: "Title, description, and project ID are required" });
 		}
 
-		const projectRepository = AppDataSource.getRepository(Project);
-		const project = await projectRepository.findOne({ where: { id: projectId } });
-		if (!project) {
-			return res.status(404).json({ message: "Project not found" });
-		}
-
-		const userRepository = AppDataSource.getRepository(User);
-		const user = await userRepository.findOne({ where: { id: userId } });
-		if (!user) {
-			return res.status(404).json({ message: "User not found" });
-		}
-
-		const assignedToUser = await userRepository.findOne({ where: { id: assignedToId } });
-		if (!assignedToUser) {
-			return res.status(404).json({ message: "Assigned to user not found" });
-		}
-
 		const taskRepository = AppDataSource.getRepository(Task);
+		const userRepository = AppDataSource.getRepository(User);
+
+		// Get creator and assignee details
+		const creator = await userRepository.findOne({ where: { id: userId } });
+		const assignee = await userRepository.findOne({ where: { id: assignedToId || userId } });
+
+		if (!creator) {
+			return res.status(404).json({ message: "Creator not found" });
+		}
+
+		if (assignedToId && !assignee) {
+			return res.status(404).json({ message: "Assignee not found" });
+		}
 
 		// Create task with authenticated user as creator
 		const task = taskRepository.create({
 			title,
 			description,
-			status: status || TaskStatus.STARTED,
+			status: status || TaskStatus.BACKLOG,
 			project: { id: projectId },
 			created_by: { id: userId },
 			assigned_to: { id: assignedToId || userId }, // Default to creator if not assigned
 		});
 
 		const savedTask = await taskRepository.save(task);
+
+		// invoke notification only if task is assigned to other user
+		if (userId !== assignedToId) {
+			assignTaskNotification(userId, assignedToId, savedTask.id);
+			const message = {
+				email: assignee?.email,
+				subject: "New Task Assigned",
+				body: `Hi, you have a new task: ${task.title}`,
+			};
+			sendMessage("task:assigned", JSON.stringify(message));
+		}
 
 		res.status(201).json({ message: "Task created successfully", task: savedTask });
 	} catch (error: any) {
@@ -76,7 +84,7 @@ const getTask = async (req: Request, res: Response) => {
 			return res.status(403).json({ message: "Access denied" });
 		}
 
-		res.status(200).json({ task });
+		res.status(200).json({ message: "Task fetched successfully", task });
 	} catch (error: any) {
 		console.error(error);
 		res.status(500).json({ message: "Error occurred while fetching task" });
@@ -108,7 +116,7 @@ const getTasks = async (req: Request, res: Response) => {
 
 		const tasks = await queryBuilder.getMany();
 
-		res.status(200).json({ tasks });
+		res.status(200).json({ message: "Tasks fetched successfully", tasks });
 	} catch (error: any) {
 		console.error(error);
 		res.status(500).json({ message: "Error occurred while fetching tasks" });
@@ -123,7 +131,6 @@ const updateTask = async (req: Request, res: Response) => {
 
 		const taskRepository = AppDataSource.getRepository(Task);
 
-		// Get task only if user is creator or assigned
 		const task = await taskRepository.findOne({
 			where: { id: Number(id) },
 			relations: ["created_by", "assigned_to"],
@@ -133,16 +140,22 @@ const updateTask = async (req: Request, res: Response) => {
 			return res.status(404).json({ message: "Task not found" });
 		}
 
-		// Check if user has access to this task
-		if (task.created_by.id !== userId && task.assigned_to.id !== userId) {
-			return res.status(403).json({ message: "Access denied" });
-		}
-
 		// Update task and set updated_by
 		Object.assign(task, updates);
 		task.updated_by = { id: userId } as any;
 
 		const updatedTask = await taskRepository.save(task);
+
+		if (userId !== task.assigned_to.id) {
+			updateTaskNotification(task.assigned_to.id, task.id);
+
+			const message = {
+				email: task.assigned_to.email,
+				subject: "Task Updated",
+				body: `Hi, your task has been updated: ${task.title}`,
+			};
+			sendMessage("task:updated", JSON.stringify(message));
+		}
 
 		res.status(200).json({ message: "Task updated successfully", task: updatedTask });
 	} catch (error: any) {
