@@ -13,7 +13,10 @@ const createProject = async (req: Request, res: Response) => {
 		}
 
 		const userRepository = AppDataSource.getRepository(User);
-		user = await userRepository.findOne({ where: { id: user.id } });
+		user = (await userRepository.findOne({ where: { id: user.id } })) as User;
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
 
 		if (user.role !== `${process.env.ADMIN_ROLE}`) {
 			return res.status(403).json({ message: "You are not authorized to create a project" });
@@ -22,7 +25,7 @@ const createProject = async (req: Request, res: Response) => {
 		const projectRepository = AppDataSource.getRepository(Project);
 		const project = projectRepository.create({
 			title,
-			created_by: user.id,
+			created_by: user,
 		});
 		await projectRepository.save(project);
 		res.status(201).json({ message: "Project created successfully", project });
@@ -34,8 +37,11 @@ const createProject = async (req: Request, res: Response) => {
 const getProject = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
+
+		const user = req.user;
+
 		const projectRepository = AppDataSource.getRepository(Project);
-		const project = await projectRepository.findOne({ where: { id: Number(id) } });
+		const project = await projectRepository.findOne({ where: { id: Number(id), created_by: user } });
 
 		if (!project) {
 			return res.status(404).json({ message: "Project not found" });
@@ -51,7 +57,7 @@ const getProjects = async (req: Request, res: Response) => {
 	try {
 		const user = req.user;
 		const projectRepository = AppDataSource.getRepository(Project);
-		const projects = await projectRepository.find({ where: { created_by: user.id } });
+		const projects = await projectRepository.find({ where: { created_by: user } });
 
 		if (!projects) {
 			return res.status(404).json({ message: "No projects found" });

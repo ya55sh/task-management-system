@@ -4,7 +4,7 @@ import { createTask, getTasks, getTask, updateTask, deleteTask } from "../contro
 
 const taskRouter = Router();
 
-// All routes require authentication
+// // All routes require authentication
 taskRouter.use(authMiddleware);
 
 // Task routes using authenticated user context

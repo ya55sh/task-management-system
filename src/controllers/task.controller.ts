@@ -8,7 +8,8 @@ import { sendMessage } from "../rabbitMq/sender";
 const createTask = async (req: Request, res: Response) => {
 	try {
 		const { title, description, dueDate, status, projectId, assignedToId } = req.body;
-		const userId = req.user.id; // From authenticated user
+		console.log("from task controller", req);
+		const userId = req.user?.id;
 
 		if (!title || !description || !projectId) {
 			return res.status(400).json({ message: "Title, description, and project ID are required" });
@@ -44,13 +45,13 @@ const createTask = async (req: Request, res: Response) => {
 		// invoke notification only if task is assigned to other user
 		if (userId !== assignedToId) {
 			assignTaskNotification(userId, assignedToId, savedTask.id);
-			const message = {
-				email: assignee?.email,
-				subject: "New Task Assigned",
-				body: `Hi, you have a new task: ${task.title}`,
-			};
-			sendMessage("task:assigned", JSON.stringify(message));
 		}
+		const message = {
+			email: assignee?.email,
+			subject: "New Task Assigned",
+			body: `Hi, you have a new task: ${task.title}`,
+		};
+		await sendMessage("task:assigned", JSON.stringify(message));
 
 		res.status(201).json({ message: "Task created successfully", task: savedTask });
 	} catch (error: any) {
@@ -62,7 +63,7 @@ const createTask = async (req: Request, res: Response) => {
 const getTask = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
-		const userId = req.user.id; // From authenticated user
+		const user = req.user; // From authenticated user
 
 		const taskRepository = AppDataSource.getRepository(Task);
 
@@ -80,7 +81,7 @@ const getTask = async (req: Request, res: Response) => {
 		}
 
 		// Check if user has access to this task
-		if (task.created_by.id !== userId && task.assigned_to.id !== userId) {
+		if (task.created_by.id !== user.id && task.assigned_to.id !== user.id) {
 			return res.status(403).json({ message: "Access denied" });
 		}
 
@@ -93,7 +94,7 @@ const getTask = async (req: Request, res: Response) => {
 
 const getTasks = async (req: Request, res: Response) => {
 	try {
-		const userId = req.user.id; // From authenticated user
+		const user = req.user;
 		const { status, projectId } = req.query;
 
 		const taskRepository = AppDataSource.getRepository(Task);
@@ -104,7 +105,7 @@ const getTasks = async (req: Request, res: Response) => {
 			.leftJoinAndSelect("task.project", "project")
 			.leftJoinAndSelect("task.assigned_to", "assigned_to")
 			.leftJoinAndSelect("task.created_by", "created_by")
-			.where("task.created_by.id = :userId OR task.assigned_to.id = :userId", { userId });
+			.where("task.created_by.id = :userId OR task.assigned_to.id = :userId", { userId: user.id });
 
 		// Add filters if provided
 		if (status) {
@@ -127,7 +128,7 @@ const updateTask = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
 		const updates = req.body;
-		const userId = req.user.id; // From authenticated user
+		const user = req.user; // From authenticated user
 
 		const taskRepository = AppDataSource.getRepository(Task);
 
@@ -142,11 +143,11 @@ const updateTask = async (req: Request, res: Response) => {
 
 		// Update task and set updated_by
 		Object.assign(task, updates);
-		task.updated_by = { id: userId } as any;
+		task.updated_by = { id: user.id } as any;
 
 		const updatedTask = await taskRepository.save(task);
 
-		if (userId !== task.assigned_to.id) {
+		if (user.id !== task.assigned_to.id) {
 			updateTaskNotification(task.assigned_to.id, task.id);
 
 			const message = {
@@ -167,7 +168,7 @@ const updateTask = async (req: Request, res: Response) => {
 const deleteTask = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
-		const userId = req.user.id; // From authenticated user
+		const user = req.user; // From authenticated user
 
 		const taskRepository = AppDataSource.getRepository(Task);
 
@@ -182,7 +183,7 @@ const deleteTask = async (req: Request, res: Response) => {
 		}
 
 		// Only creator can delete the task
-		if (task.created_by.id !== userId) {
+		if (task.created_by.id !== user.id) {
 			return res.status(403).json({ message: "Only task creator can delete the task" });
 		}
 
