@@ -1,6 +1,6 @@
 # Task Manager System
 
-\*still a WIP example integrating AI to generate titles or summaries/description for the task
+\*still a WIP, for example - integrating AI to generate titles or summaries/description for the task
 
 ## Overview
 
