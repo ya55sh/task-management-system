@@ -1,5 +1,7 @@
 # Task Manager System
 
+\*still a WIP example integrating AI to generate titles or summaries/description for the task
+
 ## Overview
 
 A collaborative task management system built with Node.js, Express, TypeORM, and PostgreSQL. The system supports user authentication, project and task management, team collaboration, notifications, and real-time updates via RabbitMQ and sockets.
@@ -36,7 +38,7 @@ A collaborative task management system built with Node.js, Express, TypeORM, and
 
 1. Clone the repository:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/ya55sh/task-management-system.git
    cd task-manager-system
    ```
 2. Install dependencies:
@@ -44,7 +46,7 @@ A collaborative task management system built with Node.js, Express, TypeORM, and
    npm install
    ```
 3. Configure environment variables:
-   -  Copy `.env.example` to `.env` and fill in your database, JWT secret, and RabbitMQ details.
+   -  Copy `.env.example` to `.env` and fill in your database, JWT secret details.
 4. Run database migrations (if any):
    ```bash
    # Example with TypeORM CLI
